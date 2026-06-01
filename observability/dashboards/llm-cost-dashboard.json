@@ -1,0 +1,65 @@
+{
+  "title": "LLM Cost & Usage",
+  "uid": "llm-cost-001",
+  "tags": ["llm", "cost", "ai"],
+  "time": {"from": "now-24h", "to": "now"},
+  "refresh": "30s",
+  "panels": [
+    {
+      "id": 1,
+      "title": "Total LLM Cost (USD/hour)",
+      "type": "timeseries",
+      "gridPos": {"x": 0, "y": 0, "w": 12, "h": 8},
+      "targets": [{
+        "expr": "sum(increase(llm_cost_usd_total[1h])) by (provider)",
+        "legendFormat": "{{provider}}"
+      }],
+      "fieldConfig": {
+        "defaults": {"unit": "currencyUSD", "color": {"mode": "palette-classic"}}
+      }
+    },
+    {
+      "id": 2,
+      "title": "Cache Hit Rate by Task",
+      "type": "gauge",
+      "gridPos": {"x": 12, "y": 0, "w": 12, "h": 8},
+      "targets": [{
+        "expr": "avg(llm_token_cache_hit_ratio) by (task_type)",
+        "legendFormat": "{{task_type}}"
+      }],
+      "fieldConfig": {
+        "defaults": {"unit": "percentunit", "min": 0, "max": 1,
+          "thresholds": {"steps": [{"color": "red","value": 0},{"color": "yellow","value": 0.1},{"color": "green","value": 0.2}]}}
+      }
+    },
+    {
+      "id": 3,
+      "title": "LLM Latency P50/P95/P99 by Provider",
+      "type": "timeseries",
+      "gridPos": {"x": 0, "y": 8, "w": 24, "h": 8},
+      "targets": [
+        {"expr": "histogram_quantile(0.50, rate(llm_request_duration_seconds_bucket[5m]))", "legendFormat": "p50 {{provider}}"},
+        {"expr": "histogram_quantile(0.95, rate(llm_request_duration_seconds_bucket[5m]))", "legendFormat": "p95 {{provider}}"},
+        {"expr": "histogram_quantile(0.99, rate(llm_request_duration_seconds_bucket[5m]))", "legendFormat": "p99 {{provider}}"}
+      ],
+      "fieldConfig": {"defaults": {"unit": "s"}}
+    },
+    {
+      "id": 4,
+      "title": "Circuit Breaker Status",
+      "type": "stat",
+      "gridPos": {"x": 0, "y": 16, "w": 8, "h": 4},
+      "targets": [{"expr": "llm_circuit_breaker_state", "legendFormat": "{{provider}}"}],
+      "fieldConfig": {
+        "defaults": {"mappings": [{"options": {"0": {"text": "CLOSED ✓","color": "green"},"1": {"text": "OPEN ✗","color": "red"}}}]}
+      }
+    },
+    {
+      "id": 5,
+      "title": "Cost per User Tier",
+      "type": "piechart",
+      "gridPos": {"x": 8, "y": 16, "w": 8, "h": 4},
+      "targets": [{"expr": "sum(increase(llm_cost_usd_total[24h])) by (user_tier)", "legendFormat": "{{user_tier}}"}]
+    }
+  ]
+}

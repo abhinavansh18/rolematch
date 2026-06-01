@@ -1,0 +1,49 @@
+global:
+  image:
+    registry: gcr.io/YOUR_PROJECT_ID
+    pullPolicy: Always
+  env: staging
+
+namespace: api
+
+kafka:
+  bootstrapServers: kafka.staging.svc.cluster.local:9092
+qdrant:
+  host: qdrant.staging.svc.cluster.local
+  port: "6333"
+redis:
+  url: redis://redis-master.staging.svc.cluster.local:6379/0
+otel:
+  endpoint: http://otel-collector.monitoring.svc.cluster.local:4317
+
+externalSecrets:
+  store: aws-secretsmanager
+  prefix: staging/jobmatch
+
+postgresql:
+  enabled: false    # Use managed Cloud SQL
+redis:
+  enabled: true     # Deploy Bitnami Redis in staging to save cost
+
+userService:
+  image: {repository: user-service, tag: latest}
+  replicas: 1
+  resources:
+    requests: {cpu: 250m, memory: 256Mi}
+    limits:   {cpu: 1000m, memory: 512Mi}
+
+jobService:
+  image: {repository: job-service, tag: latest}
+  replicas: 1
+
+aiOrchestration:
+  image: {repository: ai-orchestration, tag: latest}
+  replicas: 1
+
+workerService:
+  image: {repository: worker-service, tag: latest}
+  replicas: 1
+
+canary:
+  enabled: false
+  weight: 0

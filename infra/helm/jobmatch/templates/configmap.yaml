@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+  namespace: {{ .Values.namespace | default "api" }}
+data:
+  APP_ENV:               {{ .Values.global.env | quote }}
+  KAFKA_BOOTSTRAP_SERVERS: {{ .Values.kafka.bootstrapServers | quote }}
+  QDRANT_HOST:           {{ .Values.qdrant.host | quote }}
+  QDRANT_PORT:           {{ .Values.qdrant.port | quote }}
+  REDIS_URL:             {{ .Values.redis.url | quote }}
+  OTEL_EXPORTER_OTLP_ENDPOINT: {{ .Values.otel.endpoint | quote }}

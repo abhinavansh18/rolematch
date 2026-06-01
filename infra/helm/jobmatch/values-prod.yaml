@@ -1,0 +1,52 @@
+global:
+  image:
+    registry: gcr.io/YOUR_PROJECT_ID
+    pullPolicy: IfNotPresent
+  env: production
+
+userService:
+  image:
+    repository: user-service
+    tag: latest
+  replicas: 3
+  resources:
+    requests: { cpu: 500m, memory: 512Mi }
+    limits:   { cpu: 2000m, memory: 2Gi }
+
+jobService:
+  image:
+    repository: job-service
+    tag: latest
+  replicas: 3
+  resources:
+    requests: { cpu: 500m, memory: 512Mi }
+    limits:   { cpu: 2000m, memory: 2Gi }
+
+aiOrchestration:
+  image:
+    repository: ai-orchestration
+    tag: latest
+  replicas: 4
+  resources:
+    requests: { cpu: 1000m, memory: 1Gi }
+    limits:   { cpu: 4000m, memory: 4Gi }
+
+workerService:
+  image:
+    repository: worker-service
+    tag: latest
+  replicas: 4
+  resources:
+    requests: { cpu: 1000m, memory: 2Gi }
+    limits:   { cpu: 4000m, memory: 8Gi }
+
+canary:
+  enabled: false
+  weight: 0
+
+ingress:
+  enabled: true
+  className: nginx
+  host: api.jobmatch.ai
+  tls: true
+  certManager: true

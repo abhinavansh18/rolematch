@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker-service
+  namespace: workers
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: worker-service
+  template:
+    metadata:
+      labels:
+        app: worker-service
+    spec:
+      containers:
+      - name: worker
+        image: gcr.io/PROJECT_ID/worker-service:IMAGE_TAG
+        command: ["celery", "-A", "celery_app", "worker", "--loglevel=info", "--concurrency=4"]
+        envFrom:
+        - secretRef:
+            name: llm-api-keys
+        - configMapRef:
+            name: app-config
+        resources:
+          requests: {cpu: 500m, memory: 1Gi}
+          limits:   {cpu: 4000m, memory: 8Gi}
+        livenessProbe:
+          exec:
+            command: ["celery", "-A", "celery_app", "inspect", "ping", "--timeout=5"]
+          initialDelaySeconds: 30
+          periodSeconds: 30
+---
+# KEDA ScaledObject: scale workers based on Kafka consumer lag
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: worker-scaler
+  namespace: workers
+spec:
+  scaleTargetRef:
+    name: worker-service
+  minReplicaCount: 1
+  maxReplicaCount: 12
+  cooldownPeriod: 120
+  triggers:
+  - type: kafka
+    metadata:
+      bootstrapServers: kafka.default.svc.cluster.local:9092
+      consumerGroup: jobmatch-workers
+      topic: job.scraped
+      lagThreshold: "1000"
+      offsetResetPolicy: latest
+  - type: kafka
+    metadata:
+      bootstrapServers: kafka.default.svc.cluster.local:9092
+      consumerGroup: resume-pipeline-workers
+      topic: resume.parse
+      lagThreshold: "100"
